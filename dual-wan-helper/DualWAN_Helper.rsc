@@ -145,7 +145,7 @@
     :log info ("Updating cloud.mikrotik.com...")
     /ip cloud force-update
     # Update Hurricane Electric IPv6 Tunnel
-    # See https://github.com/martinclaro/mikrotik/blob/master/HurricaneElectricIPv6TunnelUpdater.rsc
+    # See https://github.com/martinclaro/mikrotik/tree/master/he-ipv6-helper
     # :log info ("Running IPv6_HE_Helper script...")
     # /system script run IPv6_HE_Helper
 }
