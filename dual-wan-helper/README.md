@@ -7,6 +7,22 @@ MikroTik Script for easy failover between 2 (or more) WAN interfaces.
 
 Run the following commands before running the script.
 ```
+
+/ip dns
+set allow-remote-requests=yes servers=208.67.222.222,208.67.220.220,2620:0:ccc::2,2620:0:ccd::2
+
+/interface ethernet
+set [ find default-name=ether1 ] comment=FIBER name=ether1-wan speed=1Gbps
+
+/ip dhcp-client
+add dhcp-options=hostname,clientid disabled=no interface=ether1-wan use-peer-dns=no use-peer-ntp=no
+
+/ppp profile
+add change-tcp-mss=no comment=ARNET name=pppoe-arnet
+
+/interface pppoe-client
+add add-default-route=yes comment="ARNET PPPOE" default-route-distance=2 disabled=no interface=ether2-wan max-mru=1492 max-mtu=1492 name=pppoe1-wan password=telecom profile=pppoe-arnet user=telecom@telecom
+
 /ip firewall address-list
 add address=192.168.86.0/24 comment=LAN list=loc
 # WAN addresses will be updated by the helper script automatically.
@@ -58,4 +74,20 @@ add action=mark-routing chain=prerouting comment="ROUTING MARK FIBER" connection
 
 add action=change-mss chain=forward comment="ADSL MSS" in-interface=pppoe1-wan new-mss=1452 passthrough=yes protocol=tcp tcp-flags=syn tcp-mss=1453-65535
 add action=change-mss chain=forward comment="ADSL MSS" new-mss=1452 out-interface=pppoe1-wan passthrough=yes protocol=tcp tcp-flags=syn tcp-mss=1453-65535
+
+/ip firewall nat
+add action=masquerade chain=srcnat comment="ARNET MODEM" dst-address=10.0.0.0/24 out-interface=ether2-wan
+add action=masquerade chain=srcnat comment=FIBER out-interface=ether1-wan
+add action=masquerade chain=srcnat comment=ARNET out-interface=pppoe1-wan
+
+/tool e-mail
+set address=smtp.gmail.com from=user@gmail.com password="my-secret-password" port=587 start-tls=yes user=user@gmail.com
+
+```
+
+# Post-Installation
+Run the following commands to run the script every minute.
+```
+/system scheduler
+add interval=1m name=Tsk_DualWAN_Helper on-event=DualWAN_Helper policy=reboot,read,write,policy,test,password,sniff,sensitive start-time=startup
 ```
